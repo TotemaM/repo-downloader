@@ -9,27 +9,28 @@
 # in current folder.                                                             #
 ##################################################################################
 
-# arg1 = user
-# arg2 = repo
-# arg3 = branch
-
 # Check if the number of arguments is correct
 if [ $# -ne 3 ]; then
-    echo "Error: Invalid number of arguments."
     echo "Usage: dlrepo.sh <user> <repo> <branch>"
     exit 1
 fi
 
 # Download the repository
-curl -L https://github.com/$1/$2/archive/refs/heads/$3.zip -o $2.zip
-# Check if curl command was successful
+curl -f -L https://github.com/$1/$2/archive/refs/heads/$3.zip -o repo.zip
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to download the repository."
     exit 1
 fi
 
-unzip $2.zip            # Unzip the repository
-shopt -s dotglob        # Include hidden files in pathname expansion
-mv $2-$3/* .            # Move the content of the repository to the current folder
-shopt -u dotglob        # Disable dotglob to avoid side effects
-rm -rf $2-$3 $2.zip     # Delete the repository folder and the zip file
+unzip repo.zip                      # Unzip the repository
+shopt -s dotglob                    # Include hidden files in pathname expansion
+mv -f 2>/dev/null $2-$3/* .         # Move the files to the current folder
+if [ $? -eq 0 ]; then
+    dl_folder=$2-$3
+else                                # Case where the master branch is an alias of the main branch
+    if [ $3 == "master" ]; then
+        mv $2-main/* .
+        dl_folder=$2-main
+    fi
+fi
+shopt -u dotglob                    # Disable dotglob to avoid side effects
+rm -rf $dl_folder repo.zip          # Delete the repository folder and the zip file
